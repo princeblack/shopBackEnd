@@ -1,0 +1,1 @@
+module.exports = url = "mongodb+srv://dmcthesaint:Princeblack01.@cluster0.mgmw8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
