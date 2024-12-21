@@ -2,6 +2,7 @@ const multer = require('multer');
 const AWS = require('aws-sdk');
 const multerS3 = require('multer-s3');
 const path = require('path');
+const NodeClam = require('clamscan');
 
 // Configure AWS S3
 const s3 = new AWS.S3({
@@ -17,8 +18,41 @@ const allowedMimeTypes = {
   pdf: ['application/pdf'],
 };
 
+// Validate file extensions
+const validateFileExtension = (fileName, allowedExtensions) => {
+  const extension = path.extname(fileName).toLowerCase();
+  return allowedExtensions.includes(extension);
+};
+
+const clamScan = new NodeClam().init({
+  removeInfected: true, // Automatically remove infected files
+  quarantineInfected: 'uploads/quarantine/', // Quarantine folder
+  scanLog: 'logs/clamav-scan.log',
+});
+
+// Middleware to scan files
+export const scanFileForMalware = async (req, res, next) => {
+  if (!req.file) return next();
+
+  try {
+    const clamscan = await clamScan;
+    const isInfected = await clamscan.isInfected(req.file.path);
+
+    if (isInfected) {
+      // Remove file if infected
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: 'Uploaded file is infected with malware' });
+    }
+    next();
+  } catch (err) {
+    console.error('ClamAV Error:', err);
+    return res.status(500).json({ message: 'File scan failed' });
+  }
+};
+
 // Validate file type
 const fileFilter = (req, file, cb) => {
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mpeg', '.avi', '.pdf'];
   const dangerousExtensions = ['.exe', '.js', '.sh', '.bat'];
 const fileExtension = path.extname(file.originalname).toLowerCase();
 
@@ -30,8 +64,9 @@ if (dangerousExtensions.includes(fileExtension)) {
   const isMimeValid = Object.values(allowedMimeTypes).some((types) =>
     types.includes(file.mimetype)
   );
+  const isExtensionValid = validateFileExtension(file.originalname, allowedExtensions);
 
-  if (isMimeValid) {
+  if (isMimeValid && isExtensionValid) {
     cb(null, true);
   } else {
     cb(new Error('Invalid file type'), false);

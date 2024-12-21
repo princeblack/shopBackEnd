@@ -12,7 +12,7 @@ const {
   updatedUserFromAdmin,
   deleteUserfromAdmin,
 } = require("../controllers/adminController");
-const { validateRegister } = require("../utils/validateRegister");
+const { validateRegister } = require("../middlewares/validateRegister");
 const router = express.Router();
 
 router.post("/login", userLogin);

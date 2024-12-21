@@ -7,7 +7,7 @@ const rateLimit = require("express-rate-limit");
 const xss = require("xss-clean");
 const cookieParser = require("cookie-parser");
 const csrf = require("csurf");
-const fileUploadRouter = require("./routes/fileUpload");
+const fileUploadRouter = require("./routes/fileUploadRoutes");
 const logger = require("./utils/logger");
 const xssClean = require("xss-clean");
 const hpp = require("hpp");
@@ -49,6 +49,7 @@ const userRoutes = require("./routes/userRoutes");
 
 // Middleware
 app.use(cors());
+app.disable('x-powered-by');
 // Configure Content Security Policy
 app.use(
   helmet.contentSecurityPolicy({
@@ -97,6 +98,7 @@ app.use("/api/upload", fileUploadRouter);
 /** ROUTES Api endpoint*/
 app.use("/api", csrfProtection);
 app.use("/api/users", userRoutes);
+app.use('/api/files', fileUploadRouter);
 
 // Route de test
 app.get("/", (req, res) => {
